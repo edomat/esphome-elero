@@ -473,7 +473,7 @@ void Elero::register_cover(EleroCover *cover) {
 bool Elero::send_command(t_elero_command *cmd) {
   ESP_LOGVV(TAG, "send_command called");
   uint16_t code = (0x00 - (cmd->counter * 0x708f)) & 0xffff;
-  this->msg_tx_[0] = 0x1b; // message length
+  this->msg_tx_[0] = 0x1d; // message length
   this->msg_tx_[1] = cmd->counter; // message counter
   this->msg_tx_[2] = cmd->pck_inf[0];
   this->msg_tx_[3] = cmd->pck_inf[1];
