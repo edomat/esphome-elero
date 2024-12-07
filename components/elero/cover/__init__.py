@@ -12,6 +12,8 @@ CONF_BLIND_ADDRESS = "blind_address"
 CONF_REMOTE_ADDRESS = "remote_address"
 CONF_PAYLOAD_1 = "payload_1"
 CONF_PAYLOAD_2 = "payload_2"
+CONF_PAYLOAD_3 = "payload_3"
+CONF_PAYLOAD_4 = "payload_4"
 CONF_PCKINF_1 = "pck_inf1"
 CONF_PCKINF_2 = "pck_inf2"
 CONF_HOP = "hop"
@@ -42,6 +44,8 @@ CONFIG_SCHEMA = cover.COVER_SCHEMA.extend(
         cv.Optional(CONF_CLOSE_DURATION, default="0s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_PAYLOAD_1, default=0x00): cv.hex_int_range(min=0x0, max=0xff),
         cv.Optional(CONF_PAYLOAD_2, default=0x04): cv.hex_int_range(min=0x0, max=0xff),
+        cv.Optional(CONF_PAYLOAD_3, default=0x00): cv.hex_int_range(min=0x0, max=0xff),
+        cv.Optional(CONF_PAYLOAD_4, default=0x00): cv.hex_int_range(min=0x0, max=0xff),
         cv.Optional(CONF_PCKINF_1, default=0x6a): cv.hex_int_range(min=0x0, max=0xff),
         cv.Optional(CONF_PCKINF_2, default=0x00): cv.hex_int_range(min=0x0, max=0xff),
         cv.Optional(CONF_HOP, default=0x0a): cv.hex_int_range(min=0x0, max=0xff),
@@ -69,6 +73,8 @@ async def to_code(config):
     cg.add(var.set_close_duration(config[CONF_CLOSE_DURATION]))
     cg.add(var.set_payload_1(config[CONF_PAYLOAD_1]))
     cg.add(var.set_payload_2(config[CONF_PAYLOAD_2]))
+    cg.add(var.set_payload_3(config[CONF_PAYLOAD_3]))
+    cg.add(var.set_payload_4(config[CONF_PAYLOAD_4]))
     cg.add(var.set_pckinf_1(config[CONF_PCKINF_1]))
     cg.add(var.set_pckinf_2(config[CONF_PCKINF_2]))
     cg.add(var.set_hop(config[CONF_HOP]))
