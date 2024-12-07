@@ -24,8 +24,6 @@ class EleroCover : public cover::Cover, public Component {
   void set_remote_address(uint32_t remote) { this->command_.remote_addr = remote; }
   void set_payload_1(uint8_t payload) { this->command_.payload[0] = payload; }
   void set_payload_2(uint8_t payload) { this->command_.payload[1] = payload; }
-  void set_payload_3(uint8_t payload) { this->command_.payload[2] = payload; }
-  void set_payload_4(uint8_t payload) { this->command_.payload[3] = payload; }
   void set_hop(uint8_t hop) { this->command_.hop = hop; }
   void set_pckinf_1(uint8_t pckinf) { this->command_.pck_inf[0] = pckinf; }
   void set_pckinf_2(uint8_t pckinf) { this->command_.pck_inf[1] = pckinf; }
