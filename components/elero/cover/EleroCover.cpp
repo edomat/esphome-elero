@@ -33,7 +33,8 @@ void EleroCover::loop() {
 
   if((now > this->poll_offset_) && (now - this->poll_offset_ - this->last_poll_) > intvl) {
     if (this->supports_poll_) {
-      this->commands_to_send_.push(this->command_check_);
+      this->commands_to_send_.push(EleroScheduledCommand(millis(), this->command_check_));
+      ESP_LOGV(TAG, "Queuing a CHECK.");
     }
     this->last_poll_ = now - this->poll_offset_;
   }
@@ -42,25 +43,72 @@ void EleroCover::loop() {
 
   if((this->current_operation != COVER_OPERATION_IDLE) && (this->open_duration_ > 0) && (this->close_duration_ > 0)) {
     this->recompute_position();
-    if(this->is_at_target()) {
-      this->commands_to_send_.push(this->command_stop_);
-      this->current_operation = COVER_OPERATION_IDLE;
+    if(this->is_at_target_position()) {
+      this->start_movement(COVER_OPERATION_IDLE);
     }
 
     // Publish position every second
     if(now - this->last_publish_ > 1000) {
+      ESP_LOGV(TAG, "Current Operation: %d", this->current_operation);
+      ESP_LOGV(TAG, "Target Position: %f", this->target_position_);
+      ESP_LOGV(TAG, "Target Tilt: %d", this->target_tilt_);
+      ESP_LOGV(TAG, "Seconds since movement start: %d", (millis() - this->movement_start_)/1000);
       this->publish_state(false);
       this->last_publish_ = now;
     }
   }
+  if(this->current_operation == COVER_OPERATION_IDLE && this->supports_tilt_ && !this->is_at_target_tilt()) {
+    this->adjust_tilt();
+    this->publish_state(false);
+    this->last_publish_ = now;
+  }
 }
 
-bool EleroCover::is_at_target() {
+void EleroCover::adjust_tilt() {
+  if(this->supports_tilt_) {
+    // The tilt command only tilts upwards, if we need to tilt down, first move down a bit to reset the tilt to 0.
+    float tilt_diff = this->target_tilt_ - this->tilt;
+    if(tilt_diff == 0) {
+      return;
+    }
+    if(tilt_diff < 0) {
+      this->commands_to_send_.push(EleroScheduledCommand(millis() + ELERO_LATENCY_BUFFER, this->command_down_));
+      this->commands_to_send_.push(EleroScheduledCommand(millis() + ELERO_LATENCY_BUFFER + this->tilt_down_duration_ * abs(tilt_diff), this->command_stop_));
+    } else {
+      this->commands_to_send_.push(EleroScheduledCommand(millis() + ELERO_LATENCY_BUFFER, this->command_up_));
+      this->commands_to_send_.push(EleroScheduledCommand(millis() + ELERO_LATENCY_BUFFER + this->tilt_up_duration_ * abs(tilt_diff), this->command_stop_));
+    }
+    this->tilt = this->target_tilt_;
+  }
+}
+
+bool EleroCover::is_at_target_tilt() {
+  return this->tilt == this->target_tilt_;
+}
+
+bool EleroCover::is_at_target_position() {
   // We return false as we don't want to send a stop command for completely open or
   // close - this is handled by the cover
   if((this->target_position_ == COVER_OPEN) || (this->target_position_ == COVER_CLOSED))
     if(this->supports_poll_) {
       return false;
+    } else { // When polling isn't supported and we're going to fully open or closed, wait longer to ensure we're at the desired position.
+      if(this->target_position_ == COVER_OPEN) {
+        if((millis() - this->movement_start_) > this->open_duration_) {
+          ESP_LOGV(TAG, "OPEN operation time out reached.");
+          return true;
+        } else {
+          return false;
+        }
+      }
+      if(this->target_position_ == COVER_CLOSED) {
+        if((millis() - this->movement_start_) > this->close_duration_) {
+          ESP_LOGV(TAG, "CLOSE operation time out reached.");
+          return true;
+        } else {
+          return false;
+        }
+      }
     }
 
   switch (this->current_operation) {
@@ -77,7 +125,12 @@ bool EleroCover::is_at_target() {
 void EleroCover::handle_commands(uint32_t now) {
   if((now - this->last_command_) > ELERO_DELAY_SEND_PACKETS) {
     if(this->commands_to_send_.size() > 0) {
-      this->command_.payload[4] = this->commands_to_send_.front();
+      EleroScheduledCommand scmd = this->commands_to_send_.top();
+      if(scmd.run_after > millis()) {
+        // Don't run the commant before run_after time.
+        return;
+      }
+      this->command_.payload[4] = scmd.command;
       if(this->parent_->send_command(&this->command_)) {
         this->send_packets_++;
         this->send_retries_ = 0;
@@ -183,14 +236,9 @@ void EleroCover::control(const cover::CoverCall &call) {
       this->start_movement(COVER_OPERATION_CLOSING);
     }
   }
-  if (call.get_tilt().has_value()) {
+  if (call.get_tilt().has_value() && this->supports_tilt_) {
     auto tilt = *call.get_tilt();
-    if(tilt > 0) {
-      this->commands_to_send_.push(this->command_tilt_);
-      this->tilt = 1.0;
-    } else {
-      this->tilt = 0.0;
-    }
+    this->target_tilt_ = tilt;
   }
   if (call.get_toggle().has_value()) {
     if(this->current_operation != COVER_OPERATION_IDLE) {
@@ -214,20 +262,20 @@ void EleroCover::start_movement(CoverOperation dir) {
   switch(dir) {
     case COVER_OPERATION_OPENING:
       ESP_LOGV(TAG, "Sending OPEN command");
-      this->commands_to_send_.push(this->command_up_);
+      this->commands_to_send_.push(EleroScheduledCommand(millis(), this->command_up_));
       // Reset tilt state on movement
-      this->tilt = 0.0;
+      this->tilt = 1.0;
       this->last_operation_ = COVER_OPERATION_OPENING;
     break;
     case COVER_OPERATION_CLOSING:
       ESP_LOGV(TAG, "Sending CLOSE command");
-      this->commands_to_send_.push(this->command_down_);
+      this->commands_to_send_.push(EleroScheduledCommand(millis(), this->command_down_));
       // Reset tilt state on movement
       this->tilt = 0.0;
       this->last_operation_ = COVER_OPERATION_CLOSING;
     break;
     case COVER_OPERATION_IDLE:
-      this->commands_to_send_.push(this->command_stop_);
+      this->commands_to_send_.push(EleroScheduledCommand(millis(), this->command_stop_));
     break;
   }
 

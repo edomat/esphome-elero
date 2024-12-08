@@ -23,6 +23,9 @@ CONF_COMMAND_TILT = "command_tilt"
 CONF_POLL_INTERVAL = "poll_interval"
 CONF_SUPPORTS_TILT = "supports_tilt"
 CONF_SUPPORTS_POLL = "supports_polling"
+CONF_TILT_UP_DURATION = "tilt_up_duration"
+CONF_TILT_DOWN_DURATION = "tilt_down_duration"
+
 
 EleroCover = elero_ns.class_("EleroCover", cover.Cover, cg.Component)
 
@@ -41,6 +44,8 @@ CONFIG_SCHEMA = cover.COVER_SCHEMA.extend(
         cv.Optional(CONF_POLL_INTERVAL, default="5min"): poll_interval,
         cv.Optional(CONF_OPEN_DURATION, default="0s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_CLOSE_DURATION, default="0s"): cv.positive_time_period_milliseconds,
+        cv.Optional(CONF_TILT_UP_DURATION, default="2s"): cv.positive_time_period_milliseconds,
+        cv.Optional(CONF_TILT_DOWN_DURATION, default="2s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_PAYLOAD_1, default=0x00): cv.hex_int_range(min=0x0, max=0xff),
         cv.Optional(CONF_PAYLOAD_2, default=0x04): cv.hex_int_range(min=0x0, max=0xff),
         cv.Optional(CONF_PCKINF_1, default=0x6a): cv.hex_int_range(min=0x0, max=0xff),
@@ -82,3 +87,5 @@ async def to_code(config):
     cg.add(var.set_poll_interval(config[CONF_POLL_INTERVAL]))
     cg.add(var.set_supports_tilt(config[CONF_SUPPORTS_TILT]))
     cg.add(var.set_supports_poll(config[CONF_SUPPORTS_POLL]))
+    cg.add(var.set_tilt_up_duration(config[CONF_TILT_UP_DURATION]))
+    cg.add(var.set_tilt_down_duration(config[CONF_TILT_DOWN_DURATION]))

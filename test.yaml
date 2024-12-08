@@ -1,0 +1,194 @@
+substitutions:
+  upper_devicename: "Blinds Controller"
+
+esphome:
+  name: blinds-controller
+  friendly_name: blinds-controller
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+external_components:
+  - source: 
+      type: local
+      path: components
+
+# Enable logging
+logger:
+  level: VERBOSE
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Blinds-Controller"
+    password: "sONhkLcOfUAe"
+
+captive_portal:
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO09
+      inverted: true
+    name: ${upper_devicename} Button A
+    on_press:
+      then:
+        - light.turn_on: led1
+    on_release:
+      then:
+        - light.turn_off: led1
+
+sensor:      
+  - platform: wifi_signal
+    name: ${upper_devicename} WiFi Signal
+    id: wifi_dbm
+  - platform: uptime
+    name: ${upper_devicename} Uptime
+
+# internal LED
+light:
+  - platform: neopixelbus
+    type: RGBW
+    variant: SK6812
+    pin: GPIO02
+    name: ${upper_devicename} Led
+    id: led1
+    num_leds: 1
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+  - platform: sntp
+    id: sntp_time
+
+spi:
+  id: remote_spi
+  clk_pin: GPIO07
+  mosi_pin: GPIO05
+  miso_pin: GPIO08
+
+# GD2 pin: GPIO06
+
+elero:
+  cs_pin: GPIO03
+  gdo0_pin: GPIO04
+  freq0: 0x7a
+  freq1: 0x71
+  freq2: 0x21
+
+cover:
+  - platform: elero
+    blind_address: 0x210000
+    channel: 33
+    remote_address: 0xde9a01
+    name: Office
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+    supports_tilt: true
+    supports_polling: false
+    open_duration: 40s
+    close_duration: 40s
+    tilt_up_duration: 2s
+    tilt_down_duration: 2s
+
+  - platform: elero
+    blind_address: 0x210000
+    channel: 33
+    remote_address: 0xeae301
+    name: Wardrobe
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x210000
+    channel: 33
+    remote_address: 0x0d9b01
+    name: Bedroom
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x110000
+    channel: 17
+    remote_address: 0xb59b01
+    name: Kitchen
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x020000
+    channel: 02
+    remote_address: 0xb59b01
+    name: Loggia Left
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x030000
+    channel: 03
+    remote_address: 0xb59b01
+    name: Loggia Right
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x040000
+    channel: 04
+    remote_address: 0xb59b01
+    name: Balcony Left
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x050000
+    channel: 05
+    remote_address: 0xb59b01
+    name: Balcony Right
+    pck_inf1: 0x44
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02
+
+  - platform: elero
+    blind_address: 0x5f954f
+    channel: 01
+    remote_address: 0xf68555
+    name: Awning
+    pck_inf1: 0x6a
+    pck_inf2: 0x10
+    hop: 00
+    payload_1: 0x00
+    payload_2: 0x02

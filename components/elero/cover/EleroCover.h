@@ -9,6 +9,19 @@
 namespace esphome {
 namespace elero {
 
+class EleroScheduledCommand {
+public:
+    uint32_t run_after;
+    uint8_t command;
+
+    EleroScheduledCommand(uint32_t run_after, uint8_t command) : run_after(run_after), command(command) {}
+
+    // Overload the < operator for the priority queue to compare priorities
+    bool operator<(const EleroScheduledCommand& other) const {
+        return run_after > other.run_after; // Lower timestamps have higher priority
+    }
+};
+
 class EleroCover : public cover::Cover, public Component {
  public:
   void setup() override;
@@ -35,6 +48,8 @@ class EleroCover : public cover::Cover, public Component {
   void set_poll_offset(uint32_t offset) { this->poll_offset_ = offset; }
   void set_close_duration(uint32_t dur) { this->close_duration_ = dur; }
   void set_open_duration(uint32_t dur) { this->open_duration_ = dur; }
+  void set_tilt_up_duration(uint32_t dur) { this->tilt_up_duration_ = dur; }
+  void set_tilt_down_duration(uint32_t dur) { this->tilt_down_duration_ = dur; }
   void set_poll_interval(uint32_t intvl) { this->poll_intvl_ = intvl; }
   uint32_t get_blind_address() { return this->command_.blind_addr; }
   void set_supports_tilt(bool tilt) { this->supports_tilt_ = tilt; }
@@ -43,11 +58,13 @@ class EleroCover : public cover::Cover, public Component {
   void handle_commands(uint32_t now);
   void recompute_position();
   void start_movement(cover::CoverOperation op);
-  bool is_at_target();
+  bool is_at_target_position();
+  bool is_at_target_tilt();
   
  protected:
   void control(const cover::CoverCall &call) override;
   void increase_counter();
+  void adjust_tilt();
 
   t_elero_command command_ = {
     .counter = 1,
@@ -59,10 +76,14 @@ class EleroCover : public cover::Cover, public Component {
   uint32_t movement_start_{0};
   uint32_t open_duration_{0};
   uint32_t close_duration_{0};
+  uint32_t tilt_up_duration_{0};
+  uint32_t tilt_down_duration_{0};
   uint32_t last_publish_{0};
   uint32_t last_recompute_time_{0};
+  uint32_t last_op_time_{0};
   uint32_t poll_intvl_{0};
   float target_position_{0};
+  float target_tilt_{0};
   bool supports_tilt_{false};
   bool supports_poll_{true};
   uint8_t command_up_{0x20};
@@ -70,7 +91,7 @@ class EleroCover : public cover::Cover, public Component {
   uint8_t command_check_{0x00};
   uint8_t command_stop_{0x10};
   uint8_t command_tilt_{0x24};
-  std::queue<uint8_t> commands_to_send_;
+  std::priority_queue<EleroScheduledCommand> commands_to_send_;
   uint8_t send_retries_{0};
   uint8_t send_packets_{0};
   cover::CoverOperation last_operation_{cover::COVER_OPERATION_OPENING};
