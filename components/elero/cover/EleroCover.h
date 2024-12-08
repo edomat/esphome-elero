@@ -38,6 +38,7 @@ class EleroCover : public cover::Cover, public Component {
   void set_poll_interval(uint32_t intvl) { this->poll_intvl_ = intvl; }
   uint32_t get_blind_address() { return this->command_.blind_addr; }
   void set_supports_tilt(bool tilt) { this->supports_tilt_ = tilt; }
+  void set_supports_poll(bool poll) { this->supports_poll_ = poll; }
   void set_rx_state(uint8_t state);
   void handle_commands(uint32_t now);
   void recompute_position();
@@ -63,6 +64,7 @@ class EleroCover : public cover::Cover, public Component {
   uint32_t poll_intvl_{0};
   float target_position_{0};
   bool supports_tilt_{false};
+  bool supports_poll_{true};
   uint8_t command_up_{0x20};
   uint8_t command_down_{0x40};
   uint8_t command_check_{0x00};
