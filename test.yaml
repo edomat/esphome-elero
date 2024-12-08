@@ -103,7 +103,7 @@ cover:
     open_duration: 40s
     close_duration: 40s
     tilt_up_duration: 2s
-    tilt__duration: 2s
+    tilt_down_duration: 2s
 
   - platform: elero
     blind_address: 0x210000
