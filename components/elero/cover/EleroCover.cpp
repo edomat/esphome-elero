@@ -32,7 +32,7 @@ void EleroCover::loop() {
   }
 
   if((now > this->poll_offset_) && (now - this->poll_offset_ - this->last_poll_) > intvl) {
-    if (this->supports_poll) {
+    if (this->supports_poll_) {
       this->commands_to_send_.push(this->command_check_);
     }
     this->last_poll_ = now - this->poll_offset_;

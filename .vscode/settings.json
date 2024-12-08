@@ -2,6 +2,8 @@
     "files.associations": {
         "limits": "cpp",
         "ratio": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }
