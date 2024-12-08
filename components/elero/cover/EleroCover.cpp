@@ -59,7 +59,9 @@ bool EleroCover::is_at_target() {
   // We return false as we don't want to send a stop command for completely open or
   // close - this is handled by the cover
   if((this->target_position_ == COVER_OPEN) || (this->target_position_ == COVER_CLOSED))
-    return false;
+    if(this->supports_poll_) {
+      return false;
+    }
 
   switch (this->current_operation) {
     case COVER_OPERATION_OPENING:
