@@ -453,7 +453,7 @@ void Elero::interpret_msg() {
   if((typ == 0xca) || (typ == 0xc9)) { // Status message from a blind
     // Check if we know the blind
     // status = payload[6]
-    auto search = this->address_to_cover_mapping_.find(src);
+    auto search = this->address_to_cover_mapping_.find((static_cast<uint64_t>(src) << 32) | chl);
     if(search != this->address_to_cover_mapping_.end()) {
       search->second->set_rx_state(payload[6]);
     }
@@ -461,7 +461,7 @@ void Elero::interpret_msg() {
 }
 
 void Elero::register_cover(EleroCover *cover) {
-  uint32_t address = cover->get_blind_address();
+  uint64_t address = (static_cast<uint64_t>(cover->get_blind_address()) << 32) | cover->get_channel();
   if(this->address_to_cover_mapping_.find(address) != this->address_to_cover_mapping_.end()) {
     ESP_LOGE(TAG, "A blind with this address is already registered - this is currently not supported");
     return;

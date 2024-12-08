@@ -52,6 +52,7 @@ class EleroCover : public cover::Cover, public Component {
   void set_tilt_down_duration(uint32_t dur) { this->tilt_down_duration_ = dur; }
   void set_poll_interval(uint32_t intvl) { this->poll_intvl_ = intvl; }
   uint32_t get_blind_address() { return this->command_.blind_addr; }
+  uint32_t get_channel() { return this->command_.channel; }
   void set_supports_tilt(bool tilt) { this->supports_tilt_ = tilt; }
   void set_supports_poll(bool poll) { this->supports_poll_ = poll; }
   void set_rx_state(uint8_t state);
